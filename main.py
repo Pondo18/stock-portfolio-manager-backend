@@ -29,6 +29,26 @@ def add_user():
 		cursor.close()
 		conn.close()
 
+
+@app.route('/users', methods=['GET'])
+def gett_all_user():
+	try:
+		conn = mysql.connect()
+		cursor = conn.cursor(pymysql.cursors.DictCursor)
+		if "hashcode" in request.args:
+			cursor.execute("SELECT username FROM userdata WHERE hashcode=%s", (request.args.get('hashcode'),))
+		else:
+			cursor.execute("SELECT * FROM userdata")
+		empRows = cursor.fetchall()
+		respone = jsonify(empRows)
+		respone.status_code = 200
+		return respone
+	except Exception as e:
+		print(e)
+	finally:
+		cursor.close()
+		conn.close()
+
 @app.route('/users/<string:username>', methods=['GET'])
 def get_user(username):
 	try:
@@ -44,8 +64,6 @@ def get_user(username):
 	finally:
 		cursor.close()
 		conn.close()
-
-
 
 #Credits aktualisieren
 
