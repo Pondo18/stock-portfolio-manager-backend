@@ -14,15 +14,14 @@ def add_user():
         _json = request.json
         _hashcode = _json['hashcode']
         _username = _json['username']
-        _credits = _json['credits']
-        if _hashcode and _username and _credits and request.method == 'POST':
+        if _hashcode and _username and request.method == 'POST':
             sqlQuery = "INSERT INTO userdata(hashcode, username, credits) VALUES(%s, %s, %s)"
-            bindData = (_hashcode, _username, _credits)
+            bindData = (_hashcode, _username, 100000)
             conn = mysql.connect()
             cursor = conn.cursor()
             cursor.execute(sqlQuery, bindData)
             conn.commit()
-            response = jsonify({"hashcode": _hashcode, "username": _username, "credits": _credits})
+            response = jsonify({"hashcode": _hashcode, "username": _username, "credits": 100000})
             response.status_code = 201
             return response
         else:
