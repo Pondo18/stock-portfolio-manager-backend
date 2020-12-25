@@ -18,3 +18,4 @@ app.config['MYSQL_DATABASE_HOST'] = os.environ.get('DBHOST', 'localhost')
 
 
 mysql.init_app(app)
+print(app.config)
