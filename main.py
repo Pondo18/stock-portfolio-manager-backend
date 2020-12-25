@@ -10,11 +10,12 @@ from flask import flash, request
 
 @app.route('/users', methods=['POST'])
 def add_user():
-    try:
-        _json = request.json
-        _hashcode = _json['hashcode']
-        _username = _json['username']
-        if _hashcode and _username and request.method == 'POST':
+    _json = request.get_json()
+    print(request)
+    _hashcode = _json['hashcode']
+    _username = _json['username']
+    if _hashcode and _username and request.method == 'POST':
+        try:
             sqlQuery = "INSERT INTO userdata(hashcode, username, credits) VALUES(%s, %s, %s)"
             bindData = (_hashcode, _username, 100000)
             conn = mysql.connect()
@@ -23,14 +24,15 @@ def add_user():
             conn.commit()
             response = jsonify({"hashcode": _hashcode, "username": _username, "credits": 100000})
             response.status_code = 201
+            cursor.close()
             return response
-        else:
-            return not_found()
-    except Exception as e:
-        print(e)
-    finally:
-        cursor.close()
-        conn.close()
+        except Exception as e:
+            print(e)
+            return server_error(e)
+        finally:
+            conn.close()
+    else:
+        return not_found()
 
 
 @app.route('/users', methods=['GET'])
@@ -42,12 +44,16 @@ def get_all_user():
             cursor.execute("SELECT username FROM userdata WHERE hashcode=%s", (request.args.get('hashcode'),))
         else:
             cursor.execute("SELECT * FROM userdata")
-        empRows = cursor.fetchall()
-        respone = jsonify(empRows)
-        respone.status_code = 200
-        return respone
+        userdata_row = cursor.fetchall()
+        response = jsonify(userdata_row)
+        if userdata_row is None:
+            response.status_code = 404
+        else:
+            response.status_code = 200
+        return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -59,21 +65,25 @@ def get_user(username):
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT hashcode, username, credits FROM userdata WHERE username =%s", username)
-        userdataRow = cursor.fetchone()
-        response = jsonify(userdataRow)
-        response.status_code = 200
+        userdata_row = cursor.fetchone()
+        response = jsonify(userdata_row)
+        if userdata_row is None:
+            response.status_code = 404
+        else:
+            response.status_code = 200
         return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
 
 
-# Credits aktualisieren
+# update Credits
 
 @app.route('/users/<string:username>', methods=['PUT'])
-def update_user(username):
+def update_user_credits(username):
     try:
         _json = request.json
         _credits = _json['credits']
@@ -82,13 +92,14 @@ def update_user(username):
             cursor = conn.cursor()
             cursor.execute("UPDATE userdata SET credits=%s WHERE username=%s", (_credits, username))
             conn.commit()
-            response = jsonify('User updated successfully!')
+            response = jsonify('Credits updated successfully!')
             response.status_code = 200
             return response
         else:
             return not_found()
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -106,6 +117,7 @@ def delete_user(username):
         return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -132,9 +144,10 @@ def add_holding(username):
             response.status_code = 201
             return response
         else:
-            return not_found()
+            return not_found()    # TODO: Not Found stimmt nicht
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -146,12 +159,16 @@ def get_all_holdings():
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT * FROM holdings")
-        userdataRow = cursor.fetchone()
-        response = jsonify(userdataRow)
-        response.status_code = 200
+        holdings_row = cursor.fetchall()
+        response = jsonify(holdings_row)
+        if holdings_row is None:
+            response.status_code = 404
+        else:
+            response.status_code = 200
         return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -163,12 +180,16 @@ def get_all_holdings_from_user(username):
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT * FROM holdings WHERE username =%s", username)
-        userdataRow = cursor.fetchone()
-        response = jsonify(userdataRow)
-        response.status_code = 200
+        holdings_row = cursor.fetchall()
+        response = jsonify(holdings_row)
+        if holdings_row is None:
+            response.status_code = 404
+        else:
+            response.status_code = 200
         return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -180,12 +201,16 @@ def get_holding_from_user(username, holding):
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("SELECT * FROM holdings WHERE username =%s and holding =%s", (username, holding))
-        userdataRow = cursor.fetchone()
-        response = jsonify(userdataRow)
-        response.status_code = 200
+        holdings_row = cursor.fetchone()
+        response = jsonify(holdings_row)
+        if holdings_row is None:
+            return not_found()
+        else:
+            response.status_code = 200
         return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -203,6 +228,7 @@ def delete_holding(username, holding):
         return response
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -229,6 +255,7 @@ def update_holding(username, holding):
             return not_found()
     except Exception as e:
         print(e)
+        return server_error(e)
     finally:
         cursor.close()
         conn.close()
@@ -240,9 +267,20 @@ def not_found(error=None):
         'status': 404,
         'message': 'Record not found: ' + request.url,
     }
-    respone = jsonify(message)
-    respone.status_code = 404
-    return respone
+    response = jsonify(message)
+    response.status_code = 404
+    return response
+
+
+@app.errorhandler(500)
+def server_error(error=None):
+    message = {
+        'status': 500,
+        'message': "Server Error:" + str(error) + " "+ request.url,
+    }
+    response = jsonify(message)
+    response.status_code = 500
+    return response
 
 
 if __name__ == "__main__":
