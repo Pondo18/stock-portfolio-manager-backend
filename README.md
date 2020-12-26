@@ -1,0 +1,1 @@
+docker run --rm -it mysql mysql -h $DBHOST -u $DBUSER -p"$DBPASS" $DBNAME
