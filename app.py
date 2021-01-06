@@ -1,14 +1,13 @@
 from flask import Flask
 from flask_cors import CORS, cross_origin
 
+
 app = Flask(__name__)
 CORS(app)
 
 import pymysql
-#from app import app
 from config import mysql
-from flask import jsonify
-from flask import flash, request
+from flask import jsonify, request
 
 
 # USERDATA
@@ -17,10 +16,10 @@ from flask import flash, request
 @app.route('/users', methods=['POST'])
 def add_user():
     _json = request.get_json()
-    print(request)
     _hashcode = _json['hashcode']
     _username = _json['username']
-    if _hashcode and _username and request.method == 'POST':
+    parameters = [_hashcode, _username]
+    if _hashcode and _username:
         try:
             sqlQuery = "INSERT INTO userdata(hashcode, username, credits) VALUES(%s, %s, %s)"
             bindData = (_hashcode, _username, 100000)
@@ -38,7 +37,7 @@ def add_user():
         finally:
             conn.close()
     else:
-        return not_found()
+        return bad_request(parameters)
 
 
 @app.route('/users', methods=['GET'])
@@ -93,7 +92,7 @@ def update_user_credits(username):
     try:
         _json = request.json
         _credits = _json['credits']
-        if _credits and request.method == 'PUT':
+        if _credits:
             conn = mysql.connect()
             cursor = conn.cursor()
             cursor.execute("UPDATE userdata SET credits=%s WHERE username=%s", (_credits, username))
@@ -139,7 +138,9 @@ def add_holding(username):
         _holding = _json['holding']
         _number = _json['number']
         _buy_in = _json['buyIn']
-        if _holding and _number and _buy_in and request.method == 'POST':
+        parameters = [_holding, _number, _buy_in]
+
+        if _holding and _number and _buy_in:
             sqlQuery = "INSERT INTO holdings(username, holding, number, buyIn) VALUES(%s, %s, %s, %s)"
             bindData = (username, _holding, _number, _buy_in)
             conn = mysql.connect()
@@ -150,7 +151,7 @@ def add_holding(username):
             response.status_code = 201
             return response
         else:
-            return not_found()    # TODO: Not Found stimmt nicht
+            return bad_request(parameters)
     except Exception as e:
         print(e)
         return server_error(e)
@@ -167,10 +168,7 @@ def get_all_holdings():
         cursor.execute("SELECT * FROM holdings")
         holdings_row = cursor.fetchall()
         response = jsonify(holdings_row)
-        if holdings_row is None:
-            response.status_code = 404
-        else:
-            response.status_code = 200
+        response.status_code = 200
         return response
     except Exception as e:
         print(e)
@@ -188,8 +186,8 @@ def get_all_holdings_from_user(username):
         cursor.execute("SELECT * FROM holdings WHERE username =%s", username)
         holdings_row = cursor.fetchall()
         response = jsonify(holdings_row)
-        if holdings_row is None:
-            response.status_code = 404
+        if not holdings_row:
+            response.status_code = 204
         else:
             response.status_code = 200
         return response
@@ -246,8 +244,9 @@ def update_holding(username, holding):
         _json = request.json
         _number = _json['number']
         _buy_in = _json['buyIn']
+        parameters = [_number, _buy_in]
 
-        if _number and _buy_in and request.method == 'PUT':
+        if _number and _buy_in:
             sqlQuery = "UPDATE holdings SET number=%s, buyIn=%s WHERE username=%s and holding =%s"
             bindData = (_number, _buy_in, username, holding)
             conn = mysql.connect()
@@ -258,9 +257,8 @@ def update_holding(username, holding):
             response.status_code = 200
             return response
         else:
-            return not_found()
+            return bad_request(parameters)
     except Exception as e:
-        print(e)
         return server_error(e)
     finally:
         cursor.close()
@@ -268,7 +266,7 @@ def update_holding(username, holding):
 
 
 @app.errorhandler(404)
-def not_found(error=None):
+def not_found():
     message = {
         'status': 404,
         'message': 'Record not found: ' + request.url,
@@ -278,11 +276,26 @@ def not_found(error=None):
     return response
 
 
+@app.errorhandler(400)
+def bad_request(parameters=None):
+    missing_parameters = []
+    for parameter in parameters:
+        if not parameter:
+            missing_parameters.append(parameter)
+    message = {
+        'status': 400,
+        'message': 'Client error - bad request: ' + str(missing_parameters) + ' missing',
+    }
+    response = jsonify(message)
+    response.status_code = 400
+    return response
+
+
 @app.errorhandler(500)
 def server_error(error=None):
     message = {
         'status': 500,
-        'message': "Server Error:" + str(error) + " "+ request.url,
+        'message': "Server Error:" + str(error) + " " + request.url,
     }
     response = jsonify(message)
     response.status_code = 500
@@ -290,4 +303,4 @@ def server_error(error=None):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
