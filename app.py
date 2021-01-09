@@ -171,7 +171,6 @@ def get_all_holdings():
         response.status_code = 200
         return response
     except Exception as e:
-        print(e)
         return server_error(e)
     finally:
         cursor.close()
