@@ -1,61 +1,32 @@
 # Backend zum Portfolio Manager
 
-## Aufgabe des Backends
-Das Backend dient, als Rest-API Schnittstelle zwischen Client und Daten. 
-Es ermöglicht einen sicheren Zugriff auf die Datenbank,
-ohne die Credentials im Client Code hinterlegen zu müssen.
+## Motivation and Goal
+The Repository is the backend for the main application ([Frontend](https://github.com/Pondo18/stock-portfolio-manager-frontend)). It works as a Rest-API, which should query data from a MySQL DB.
 
-[Frontend Repository](https://github.com/Pondo18/AktienPython)
 
-## Funktion der API
-Mithilfe von URL-Routing über Flask werden der in der API bestimmte Funktionen definiert. 
-Anschließend wird der SQL-Befehl ausgeführt und die Antwort als Response ausgegeben.
-
-### Wichtige Status Codes
-* 200: Ok. Request war erfolgreich
-* 201: Ok. Neuer Eintrag erstellt
-* 400: Client Error - Bad Request
-* 404: Not found. Eintrag nicht gefunden
-* 500: Internal Server Error
+## Implementation
+The Rest-API is implemented with via Flask.
 
 
 ## Dependencies
-Das Backend liegt auf einem Server, welcher z.B. über [Heroku](https://www.heroku.com/) gehostet werden kann. 
-Es kann jedoch ebenfalls lokal gestartet werden: 
+- Python 3 is installed 
+
 ~~~~Bash
-heroku local web
-~~~~
-Um dies zu tun, müssen zuerst alle verwendeten Libraries installiert werden:
-~~~~Bash
+# Installing the pip dependencies from the requirements.txt
 pip install -m requirements.txt
 ~~~~
-Die API kommuniziert mit einer MySQL Datenbank,
-welche sowohl auf einem eigenen Server als auch lokal bereitgestellt werden kann.
-Ich hab sie bei dem Hosting-Anbieter [Scalegrid](https://scalegrid.io/) hosten lassen,
-wo sie für 30 Tage kostenlos ist.
 
-Eine lokale Entwicklung bringt trotzdem einige Vorteile mit sich, 
-deshalb empfiehlt es sich z.B. über Docker eine lokal, aufzusetzen.
+## Deployment 
 
-Dafür muss zuerst ein Docker Container gestartet werden:
+For deploying the MySQL DB a docker-compose file is placed in the root dir.
+
 ~~~~Bash
+# Starting the docker container
 docker-compose up -d
 ~~~~
 
-Über `docker-compose.yml` werden dem Docker Container nun Informationen über die Datenbank, wie der Port, mitgeteilt.
-Außerdem stellt es eine phpmyadmin Benutzeroberfläche bereit. 
-Der Docker Container lässt sich nun wie folgt neustarten:
-~~~~Bash
-docker-compose down 
-docker-compose up -d
-~~~~
+The table structure necessary for the application to works, needs to be created.
 
-Über folgenden Befehl kann er und alle gespeicherten Daten gelöscht werden:
-~~~~Bash
-docker-compose down -v
-~~~~
-
-Wird die Datenbank erstmalig gestartet, müssen jedoch vor der Benutzung die Tabellen erstellt werden: 
 ~~~~SQL
 CREATE TABLE `holdings` (
   `id` int NOT NULL,
@@ -79,8 +50,11 @@ ALTER TABLE `userdata`
   ADD PRIMARY KEY (`username`);
 ~~~~
 
-Die Informationen über die Datenbank bekommt das Programm aus Umgebungsvariablen, welche in den `.env` Dateien hinterlegt sind.
+The credentials for the database should be stored in environment variables or set via default values in the config.yml
+
 ~~~~Bash
+# env variables to set
+
 DBHOST
 DBUSER
 DBNAME
@@ -93,27 +67,5 @@ source local.env
 ~~~~
 oder:
 ~~~~Bash
-source scalegrid.env
+source production.env
 ~~~~
-
-Es kommuniziert mit einer MySQL Datenbank.
-Indem die unterschiedlichen .env Dateien geladen werden, lässt sich auch auf eine lokale Datenbank wechseln.
-~~~~Bash
-source local.env
-~~~~
-
-### Backend total lines of Code 
-386
-
-## Hinweise
-Die API befindet sich im Development Zustand und ist nicht über http-authentication,
-oder weitere Verfahren geschützt.
-
-## Links
-
-Server:
-[Heroku](https://www.heroku.com/) - [Heroku Doku](https://devcenter.heroku.com/categories/reference)
-
-Datenbank: [Scalegrid](https://scalegrid.io/) - [Docker](https://www.docker.com/)
-
-Rest-API: [Flask Doku](https://flask.palletsprojects.com/en/1.1.x/)
