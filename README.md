@@ -50,7 +50,7 @@ ALTER TABLE `userdata`
   ADD PRIMARY KEY (`username`);
 ~~~~
 
-The credentials for the database should be stored in environment variables or set via default values in the config.yml
+The credentials for the database should be stored in environment variables or set via default values in the config.py
 
 ~~~~Bash
 # env variables to set
