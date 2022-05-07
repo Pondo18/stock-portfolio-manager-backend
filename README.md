@@ -60,12 +60,3 @@ DBUSER
 DBNAME
 DBPASS
 ~~~~
-
-Mithilfe dem Folgenden kann zwischen lokaler und nicht lokaler Datenbank gewechselt werden.
-~~~~Bash
-source local.env
-~~~~
-oder:
-~~~~Bash
-source production.env
-~~~~
