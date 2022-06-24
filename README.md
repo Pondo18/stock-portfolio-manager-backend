@@ -60,3 +60,8 @@ DBUSER
 DBNAME
 DBPASS
 ~~~~
+
+
+## Author 
+
+- [Moritz Moser](https://github.com/Pondo18)
